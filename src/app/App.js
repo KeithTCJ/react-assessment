@@ -16,13 +16,13 @@ function App() {
   // sideEffect (Document Load) - called useEffect hook
   // The blank bracket refers to running this hook only once
   useEffect(() => {
-    Spotify.getAccessToken();
+    //Spotify.getAccessToken(); -> not needed
 
     // populate searchResults with defaultValues
     setSearchResults([
       {
         id: 1,
-        name: "Track 1",
+        name: "Track one",
         artist: "Track 1 Artist",
         album: "Track 1 Album",
         uri: "Track 1 Uri"
@@ -41,9 +41,7 @@ function App() {
         album: "Track 3 Album",
         uri: "Track 3 Uri"
       },
-    ]);
-    
-    setPlayListTracks([
+
       {
         id: 4,
         name: "Playlist 1",
@@ -59,47 +57,110 @@ function App() {
         uri: "Playlist 2 Uri"
       },
     ]);
+    
+    setPlayListTracks([]);
 
   },[]); 
   
   // passed as a prop to SearchBar 
   // invokes the Spotify.search() 
   function search(term = ""){
-    
+    setSearchTerm(term);
   }
   
-  function runSearch(){
+  async function runSearch(){
+    // TODO - run the search function with Spotify
+    const results = await Spotify.search(searchTerm);
+    setSearchResults(results);
     
   }
 
   // passed as a prop to SearchResults 
   function addTrack(track){
-    
+    // only add a track if passed-in track id does not exist yet in the list
+    const findTrack = playListTracks.find(currentTrack => currentTrack.id === track.id);
+
+    // only then do we add the track
+    if(!findTrack)
+    setPlayListTracks([...playListTracks, track]);
+
+    setSearchResults(
+      searchResults.filter(currentTrack=>currentTrack.id !== track.id)
+    )
   }
 
   // passed as a prop Playlist
   function removeTrack(track){
+
+    // remove the track from playListTrack
+    const findTrack = playListTracks.find(currentTrack => currentTrack.id === track.id);
+
+    // append it to searchResults
+    if(findTrack){
+      setPlayListTracks(
+        playListTracks.filter(currentTrack => currentTrack.id !== track.id)
+      )
+    };
+
+    // move the track from playListTracks back to the search results
+    setSearchResults([...searchResults, findTrack]);
     
   }
 
   // passed as a prop to PlayList (update playListName)
   function updatePlayListName(strName){
+    setPlayListName(strName);
     
   }
 
   // passed as a prop to PlayList (to save the new playlist)
   function savePlayList(){
-    
+
+    // TO EXPLORE Spotify.savePlayList()
+    // convert to using Authorization Code Grant
+
+    // provide feedback that the playlist has been saved
+    const savedPlayListName = playListName;
+    const savedPlayListTracks = playListTracks.length;
+
+    alert(`${savedPlayListName} is saved with ${savedPlayListTracks} tracks`);
+
+    // Clear playListName and playListTracks
+    setPlayListName("New PlayList");
+    setPlayListTracks([]);
+    setSearchTerm("");
   }
+
+  // log data right before rendering (return html)
+  // console.log(searchTerm);
+ console.log(playListTracks);
 
   return (
     <div>
       <h1>Ja<span className="highlight">mmm</span>ing</h1>
       <div className="App">
         {/* <!-- Add a SearchBar component --> */}
+        <SearchBar
+          // pass in data to search bar
+          onSearch={search}
+          runSearch={runSearch}
+          searchTerm={searchTerm}
+          />
         <div className="App-playlist">
           {/* <!-- Add a SearchResults component --> */}
+          <SearchResults 
+          searchResults={searchResults} 
+          addTrack={addTrack}
+          />
           {/* <!-- Add a Playlist component --> */}
+          <Playlist 
+            playListTracks={playListTracks}
+            removeTrack={removeTrack}
+            playListName={playListName}
+            updatePlayListName={updatePlayListName}
+            savePlayList={savePlayList}
+        
+            />
         </div>
       </div>
     </div>
